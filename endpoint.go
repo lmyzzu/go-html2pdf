@@ -43,6 +43,14 @@ func file2pdf(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func bill2pdf(w http.ResponseWriter, r *http.Request) {
+
+	pdfBytes := billToPDF(r.URL.Query())
+	// Write the response
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Write(pdfBytes)
+}
+
 func main() {
 	var port uint16
 	if len(os.Args) < 2 {
@@ -53,9 +61,10 @@ func main() {
 		port = uint16(i)
 	}
 
-	// 2 endpoints
+	// endpoints
 	http.HandleFunc("/text2pdf", text2pdf)
 	http.HandleFunc("/file2pdf", file2pdf)
+	http.HandleFunc("/bill2pdf", bill2pdf)
 	log.Printf("Server starting on port %v\n", port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", port), nil))
 

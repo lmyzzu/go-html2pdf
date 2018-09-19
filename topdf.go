@@ -8,10 +8,16 @@ import (
 	"html/template"
 	"bytes"
 	"bufio"
+	"net/url"
+	"github.com/gorilla/schema"
+	"io/ioutil"
+	"log"
 )
 
+var decoder  = schema.NewDecoder()
+
 type tplVars struct {
-	Title string
+	Title string `schema:"title"`
 }
 
 func getBinaryPath() string {
@@ -25,10 +31,13 @@ func getBinaryPath() string {
 	return dir + "/bin/wkhtmltopdf_linux_amd64"
 }
 
-
-func toPDFWithTemplate(fileData []byte) []byte {
-
-	fmt.Printf("Running on %s", runtime.GOOS)
+func billToPDF(paramsString url.Values) []byte {
+	var vars tplVars
+	// turning GET params into template varables
+	err := decoder.Decode(&vars, paramsString)
+	if err != nil {
+		log.Println("Error in GET parameters : ", err)
+	}
 	// set wkhtmltopdf binary path
 	wkhtmltopdf.SetPath(getBinaryPath())
 
@@ -37,15 +46,14 @@ func toPDFWithTemplate(fileData []byte) []byte {
 	pdf, _ := wkhtmltopdf.NewPDFGenerator()
 	pdf.PageSize.Set(wkhtmltopdf.PageSizeA4)
 
-	//text, _ := ioutil.ReadFile("assets/index.html")
-	tpl, err := template.New("template pdf").Parse(string(fileData))
+	text, _ := ioutil.ReadFile("templates/bill.html")
+	tpl, err := template.New("template pdf").Parse(string(text))
 	if err != nil {
 		panic(err)
 	}
 
 	var b []byte
 	buf := bytes.NewBuffer(b)
-	vars := tplVars{"yooo"}
 	tpl.Execute(buf, vars)
 	r := bufio.NewReader(buf)
 
@@ -55,16 +63,12 @@ func toPDFWithTemplate(fileData []byte) []byte {
 	page.DisableExternalLinks.Set(true)
 	page.DisableInternalLinks.Set(true)
 	pdf.AddPage(page)
-
-	//fmt.Printf("p: %T\n", r)
-	fmt.Printf("args: %v\n", pdf.Args())
-
+	//fmt.Printf("args: %v\n", pdf.Args())
+	
 	if err := pdf.Create(); err != nil {
 		panic(err)
 	}
 	//ioutil.WriteFile("out/result.pdf", result, 0777)
-	//os.Remove("tmp.html")
-	//fmt.Println("Ok.")
 	return pdf.Bytes()
 }
 
