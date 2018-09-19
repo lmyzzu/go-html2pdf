@@ -64,7 +64,7 @@ func billToPDF(paramsString url.Values) []byte {
 	page.DisableInternalLinks.Set(true)
 	pdf.AddPage(page)
 	//fmt.Printf("args: %v\n", pdf.Args())
-	
+
 	if err := pdf.Create(); err != nil {
 		panic(err)
 	}

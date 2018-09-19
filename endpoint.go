@@ -52,13 +52,13 @@ func bill2pdf(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	var port uint16
-	if len(os.Args) < 2 {
-		// default port
-		port = 8080
-	} else if i, err := strconv.ParseUint(os.Args[1], 10, 16); err == nil {
+	// Default port
+	var port uint16 = 8080
+	if len(os.Args) >= 2 {
 		// is it really the correct way to do this ?!
-		port = uint16(i)
+		if i, err := strconv.ParseUint(os.Args[len(os.Args) - 1], 10, 16); err == nil {
+			port = uint16(i)
+		}
 	}
 
 	// endpoints
