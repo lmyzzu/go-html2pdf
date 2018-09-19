@@ -1,0 +1,6 @@
+vendor
+out
+Gopkg.lock
+html
+.idea
+.DS_Store
