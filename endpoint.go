@@ -6,12 +6,13 @@ import (
 	"net/http"
 	"io"
 	"bytes"
+	"os"
+	"strconv"
 )
 
 func text2pdf(w http.ResponseWriter, r *http.Request) {
 
-	err := r.ParseForm()
-	if err != nil {
+	if err := r.ParseForm(); err != nil {
 		panic(err)
 	}
 	pdfBytes := toPDF([]byte(r.PostForm.Get("htmlstring")))
@@ -27,15 +28,13 @@ func file2pdf(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(fmt.Sprintf("%v\n", err)))
 	}
 	defer file.Close()
-	//name := strings.Split(header.Filename, ".")
-	//fmt.Printf("File name %s\n", name[0])
-	// Copy the file data to my buffer
+
+	// Copy the file data to a buffer
 	io.Copy(&Buf, file)
+
 	// Reset the buffer to reduce memory allocation
 	defer Buf.Reset()
-	//contents := Buf.String()
-	//fmt.Println(contents)
-	//	pdfBytes := toPDF(Buf.Bytes())
+
 	pdfBytes := toPDF(Buf.Bytes())
 
 	// Write the response
@@ -45,8 +44,16 @@ func file2pdf(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	var port uint16
+	if len(os.Args) < 2 {
+		// default port
+		port = 8080
+	} else if i, err := strconv.ParseUint(os.Args[1], 10, 16); err == nil {
+		// is it really the correct way to do this ?!
+		port = uint16(i)
+	}
 
-	port := 8080
+	// 2 endpoints
 	http.HandleFunc("/text2pdf", text2pdf)
 	http.HandleFunc("/file2pdf", file2pdf)
 	log.Printf("Server starting on port %v\n", port)
