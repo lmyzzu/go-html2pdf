@@ -14,28 +14,23 @@ type tplVars struct {
 	Title string
 }
 
-func guard(err error) {
+func getBinaryPath() string {
+	dir, err := os.Getwd()
 	if err != nil {
 		panic(err)
 	}
+	if runtime.GOOS == "darwin" {
+		return dir + "/bin/wkhtmltopdf_macOs"
+	}
+	return dir + "/bin/wkhtmltopdf_linux_amd64"
 }
 
 
 func toPDFWithTemplate(fileData []byte) []byte {
 
-	dir, err := os.Getwd()
-	guard(err)
-
 	fmt.Printf("Running on %s", runtime.GOOS)
-	var path string
-	if runtime.GOOS == "darwin" {
-		path = dir + "/bin/wkhtmltopdf_macOs"
-	} else {
-		path = dir + "/bin/wkhtmltopdf_linux_amd64"
-	}
-
 	// set wkhtmltopdf binary path
-	wkhtmltopdf.SetPath(path)
+	wkhtmltopdf.SetPath(getBinaryPath())
 
 	fmt.Printf("Using path: %v\n", wkhtmltopdf.GetPath())
 
@@ -44,7 +39,9 @@ func toPDFWithTemplate(fileData []byte) []byte {
 
 	//text, _ := ioutil.ReadFile("assets/index.html")
 	tpl, err := template.New("template pdf").Parse(string(fileData))
-	guard(err)
+	if err != nil {
+		panic(err)
+	}
 
 	var b []byte
 	buf := bytes.NewBuffer(b)
@@ -62,8 +59,9 @@ func toPDFWithTemplate(fileData []byte) []byte {
 	//fmt.Printf("p: %T\n", r)
 	fmt.Printf("args: %v\n", pdf.Args())
 
-	err = pdf.Create()
-	guard(err)
+	if err := pdf.Create(); err != nil {
+		panic(err)
+	}
 	//ioutil.WriteFile("out/result.pdf", result, 0777)
 	//os.Remove("tmp.html")
 	//fmt.Println("Ok.")
@@ -72,18 +70,8 @@ func toPDFWithTemplate(fileData []byte) []byte {
 
 func toPDF(fileData []byte) []byte {
 
-	dir, err := os.Getwd()
-	guard(err)
-
-	fmt.Println(runtime.GOOS) // darwin
-	var path string
-	if runtime.GOOS == "darwin" {
-		path = dir + "/bin/wkhtmltopdf_macOs"
-	} else {
-		path = dir + "/bin/wkhtmltopdf_linux_amd64"
-	}
 	// set binary path
-	wkhtmltopdf.SetPath(path)
+	wkhtmltopdf.SetPath(getBinaryPath())
 	fmt.Printf("Using path: %v\n", wkhtmltopdf.GetPath())
 
 	pdf, _ := wkhtmltopdf.NewPDFGenerator()
@@ -98,8 +86,11 @@ func toPDF(fileData []byte) []byte {
 	page.DisableInternalLinks.Set(true)
 	pdf.AddPage(page)
 	fmt.Printf("args: %v\n", pdf.Args())
-	err = pdf.Create()
-	guard(err)
+
+	if err := pdf.Create(); err != nil {
+		panic(err)
+	}
+
 	return pdf.Bytes()
 }
 
